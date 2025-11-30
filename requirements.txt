@@ -5,3 +5,4 @@ plotly
 paho-mqtt
 joblib
 streamlit-autorefresh
+scikit-learn
