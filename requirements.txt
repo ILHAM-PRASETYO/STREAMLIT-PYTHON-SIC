@@ -15,7 +15,8 @@ python -m pip install streamlit pandas numpy plotly paho-mqtt joblib streamlit-a
 
 --------Untuk menjalankan streamlit:----------
 
-streamlit run app.py
+streamlit run dash.py
+
 
 
 
