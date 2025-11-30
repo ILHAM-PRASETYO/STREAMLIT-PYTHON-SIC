@@ -2,9 +2,11 @@
 #pip --version
 #Python version : Python 3.11.4
 
-python -m pip install streamlit pandas numpy plotly paho-mqtt joblib streamlit-autorefresh
+#python -m pip install 
+streamlit pandas numpy plotly paho-mqtt joblib streamlit-autorefresh
 
 streamlit run dash.py
+
 
 
 
