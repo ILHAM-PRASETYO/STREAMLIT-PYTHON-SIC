@@ -156,7 +156,7 @@ def process_queue():
                 "ts": datetime.fromtimestamp(item.get("ts", time.time()), TZ).strftime("%Y-%m-%d %H:%M:%S"),
                 "temp": temp,
                 "hum": hum,
-                "pred" : pred,
+                "pred" : label,
                 "conf": conf
             }
 
@@ -293,6 +293,7 @@ with right:
 
 # after UI render, drain queue (so next rerun shows fresh data)
 process_queue()
+
 
 
 
