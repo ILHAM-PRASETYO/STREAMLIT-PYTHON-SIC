@@ -23,9 +23,8 @@ except Exception:
 # ---------------------------
 MQTT_BROKER = "broker.hivemq.com"
 MQTT_PORT = 1883
-TOPIC_SENSOR = "iot/class/session5/sensorIlham"
-TOPIC_OUTPUT = "iot/class/session5/outputIlham"
-MODEL_PATH = "iot_temp_model.pkl"   # put the .pkl in same repo
+TOPIC_SENSOR = "iot/class/session7/sensor_predIlham"
+TOPIC_OUTPUT = "iot/class/session7/outputIlham"
 
 # timezone GMT+7 helper
 TZ = timezone(timedelta(hours=7))
@@ -42,7 +41,7 @@ GLOBAL_MQ = queue.Queue()
 # ---------------------------
 
 st.set_page_config(page_title="IoT ML Realtime Dashboard — Stable", layout="wide")
-st.title("🔥 IoT ML Realtime Dashboard — Stable")
+st.title("IoT ML Realtime Dashboard — Stable")
 
 # ---------------------------
 # session_state init (must be done before starting worker)
@@ -111,7 +110,7 @@ def _on_message(client, userdata, msg):
 # ---------------------------
 def start_mqtt_thread_once():
     def worker():
-        client = mqtt.Client()
+        client = mqtt.Client(mqtt.CallbackAPIVersion.VERSION2)
         client.on_connect = _on_connect
         client.on_message = _on_message
         # optional: configure username/password if needed:
@@ -133,26 +132,6 @@ def start_mqtt_thread_once():
 
 # start thread
 start_mqtt_thread_once()
-
-# ---------------------------
-# Helper: model predict
-# ---------------------------
-def model_predict_label_and_conf(temp, hum):
-    model = st.session_state.ml_model
-    if model is None:
-        return ("N/A", None)
-    X = [[float(temp), float(hum)]]
-    try:
-        label = model.predict(X)[0]
-    except Exception:
-        label = "ERR"
-    prob = None
-    if hasattr(model, "predict_proba"):
-        try:
-            prob = float(np.max(model.predict_proba(X)))
-        except Exception:
-            prob = None
-    return (label, prob)
 
 # ---------------------------
 # Drain queue (process incoming msgs)
@@ -186,21 +165,24 @@ def process_queue():
                 hum = float(d.get("hum"))
             except Exception:
                 hum = None
+            try:
+                label = str(d.get("label"))
+            except Exception :
+                label = None
+            try: 
+                conf = str(d.get("conf"))
+            except Exception :
+                conf = None
 
             row = {
                 "ts": datetime.fromtimestamp(item.get("ts", time.time()), TZ).strftime("%Y-%m-%d %H:%M:%S"),
                 "temp": temp,
-                "hum": hum
+                "hum": hum,
+                "pred" : pred,
+                "conf": conf
             }
 
             # ML prediction
-            if temp is not None and hum is not None:
-                label, conf = model_predict_label_and_conf(temp, hum)
-            else:
-                label, conf = ("N/A", None)
-
-            row["pred"] = label
-            row["conf"] = conf
 
             # simple anomaly: low confidence or z-score on latest window
             anomaly = False
@@ -227,19 +209,6 @@ def process_queue():
             updated = True
 
             # Auto-publish alert back to ESP32 (fire-and-forget client)
-            try:
-                if label == "Panas":
-                    pubc = mqtt.Client()
-                    pubc.connect(MQTT_BROKER, MQTT_PORT, 60)
-                    pubc.publish(TOPIC_OUTPUT, "ALERT_ON")
-                    pubc.disconnect()
-                else:
-                    pubc = mqtt.Client()
-                    pubc.connect(MQTT_BROKER, MQTT_PORT, 60)
-                    pubc.publish(TOPIC_OUTPUT, "ALERT_OFF")
-                    pubc.disconnect()
-            except Exception:
-                pass
     return updated
 
 # run once here to pick up immediately available messages
@@ -277,7 +246,7 @@ with left:
     st.markdown("---")
     st.header("Manual Output Control")
     col1, col2 = st.columns(2)
-    if col1.button("Send ALERT_ON"):
+    if col1.button("ALARM ON MANUALY"):
         try:
             pubc = mqtt.Client()
             pubc.connect(MQTT_BROKER, MQTT_PORT, 60)
@@ -285,16 +254,16 @@ with left:
             pubc.disconnect()
             st.success("Published ALERT_ON")
         except Exception as e:
-            st.error(f"Publish failed: {e}")
-    if col2.button("Send ALERT_OFF"):
+            st.error(f"Send failed: {e}")
+    if col2.button("ALARM OFF MANUALY"):
         try:
             pubc = mqtt.Client()
             pubc.connect(MQTT_BROKER, MQTT_PORT, 60)
             pubc.publish(TOPIC_OUTPUT, "ALERT_OFF")
             pubc.disconnect()
-            st.success("Published ALERT_OFF")
+            st.success("Sended...")
         except Exception as e:
-            st.error(f"Publish failed: {e}")
+            st.error(f"Send failed: {e}")
 
     st.markdown("---")
     st.header("Download Logs")
@@ -345,7 +314,4 @@ with right:
         st.write("—")
 
 # after UI render, drain queue (so next rerun shows fresh data)
-
 process_queue()
-
-
