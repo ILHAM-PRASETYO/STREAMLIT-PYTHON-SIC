@@ -23,8 +23,8 @@ except Exception:
 # ---------------------------
 MQTT_BROKER = "broker.hivemq.com"
 MQTT_PORT = 1883
-TOPIC_SENSOR = "iot/edge/session7/sensor_predIlham"
-TOPIC_OUTPUT = "iot/edge/session7/outputIlham"
+TOPIC_SENSOR = "iot/edge/session7/sensor_predI"
+TOPIC_OUTPUT = "iot/edge/session7/outputI"
 
 # timezone GMT+7 helper
 TZ = timezone(timedelta(hours=7))
@@ -293,6 +293,7 @@ with right:
 
 # after UI render, drain queue (so next rerun shows fresh data)
 process_queue()
+
 
 
 
