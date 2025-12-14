@@ -59,29 +59,7 @@ if "last" not in st.session_state:
 if "mqtt_thread_started" not in st.session_state:
     st.session_state.mqtt_thread_started = False
 
-if "ml_model" not in st.session_state:
-    st.session_state.ml_model = None
-
-# ---------------------------
-# Load Model (safe)
-# ---------------------------
-@st.cache_resource
-def load_ml_model(path):
-    try:
-        m = joblib.load(path)
-        return m
-    except Exception as e:
-        # don't fail the app; just return None and show a warning in UI
-        st.warning(f"Could not load ML model from {path}: {e}")
-        return None
-
-if st.session_state.ml_model is None:
-    st.session_state.ml_model = load_ml_model(MODEL_PATH)
-if st.session_state.ml_model:
-    st.success(f"Model loaded: {MODEL_PATH}")
-else:
-    st.info("No ML model loaded. Upload iot_temp_model.pkl in repo to enable predictions.")
-
+# --------------------------
 # ---------------------------
 # MQTT callbacks (use GLOBAL_MQ, NOT st.session_state inside callbacks)
 # ---------------------------
@@ -315,3 +293,4 @@ with right:
 
 # after UI render, drain queue (so next rerun shows fresh data)
 process_queue()
+
